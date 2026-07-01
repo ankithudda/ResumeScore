@@ -1,5 +1,5 @@
 import logging
-from pydantic import BaseModel, Field # type: ignore
+from pydantic import BaseModel, Field
 from typing import List, Dict
 from backend.services.ai_client import call_and_validate
 from backend.services.scorer import calculate_match_score

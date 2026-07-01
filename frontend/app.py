@@ -1,6 +1,6 @@
-import streamlit as st # type: ignore
-import requests # type: ignore
-import plotly.graph_objects as go # type: ignore
+import streamlit as st
+import requests
+import plotly.graph_objects as go
 import json
 import os
 
