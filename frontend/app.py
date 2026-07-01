@@ -1,6 +1,6 @@
-import streamlit as st
-import requests
-import plotly.graph_objects as go
+import streamlit as st # type: ignore
+import requests # type: ignore
+import plotly.graph_objects as go # type: ignore
 import json
 import os
 
@@ -330,7 +330,7 @@ with tab6:
                         st.divider()
                         st.subheader("🔍 Shortlist Analysis")
                         for analysis in payload.get("top_candidates_analysis", []):
-                            with st.expander(f"📄 {analysis.get('filename')}"):
+                            with st.expander(f"📄 {analysis.get('display_id')}"):
                                 for s in analysis.get("strengths", []): st.success(s)
                                 for c in analysis.get("concerns", []): st.warning(c)
                                 st.markdown(f"**🎯 Recommendation:** {analysis.get('recommendation')}")

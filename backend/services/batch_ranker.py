@@ -1,5 +1,5 @@
 import logging
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field # type: ignore
 from typing import List, Dict
 from backend.services.ai_client import call_and_validate
 from backend.services.scorer import calculate_match_score
@@ -13,7 +13,7 @@ TOP_N_FOR_AI_ANALYSIS = 5
 # ==========================================
 
 class CandidateAnalysis(BaseModel):
-    filename: str = Field(..., description="The exact resume filename being analyzed")
+    display_id: str = Field(..., description="The exact candidate display_id being analyzed")
     strengths: List[str] = Field(..., description="2-3 key strengths for this specific role")
     concerns: List[str] = Field(..., description="1-2 gaps or concerns for this role")
     recommendation: str = Field(..., description="One-line hiring recommendation")
@@ -28,10 +28,11 @@ class TopCandidatesAIResponse(BaseModel):
 async def rank_candidates(resumes: List[Dict[str, str]], job_description: str) -> dict:
     scored = []
 
-    for resume in resumes:
+    for i, resume in enumerate(resumes):
         tfidf_result = calculate_match_score(resume["text"], job_description)
         scored.append({
             "filename": resume["filename"],
+            "display_id":f"Candidate_{i+1}_{resume['filename']}",
             "text": resume["text"],
             "match_score": tfidf_result.get("match_score", 0.0),
             "raw_similarity": tfidf_result.get("raw_similarity", 0.0),
@@ -42,7 +43,7 @@ async def rank_candidates(resumes: List[Dict[str, str]], job_description: str) -
     top_candidates = scored[:TOP_N_FOR_AI_ANALYSIS]
 
     resume_block = "\n\n".join(
-        f"--- CANDIDATE: {c['filename']} ---\n{c['text'][:1000]}"
+        f"--- CANDIDATE: {c['display_id']} ---\n{c['text'][:1000]}"
         for c in top_candidates
     )
 
@@ -63,7 +64,7 @@ Return ONLY a JSON object conforming precisely to this schema:
 {{
     "top_candidates_analysis": [
         {{
-            "filename": "exact filename as shown in the CANDIDATE header above",
+            "display_id": "exact display_id as shown in the CANDIDATE header above",
             "strengths": ["Strength 1", "Strength 2", "Strength 3"],
             "concerns": ["Concern 1", "Concern 2"],
             "recommendation": "One-line hiring recommendation"
@@ -80,6 +81,7 @@ Start your response directly with the opening curly brace '{{'
     public_rankings = [
         {
             "filename": c["filename"],
+            "display_id": c["display_id"],
             "match_score": c["match_score"],
             "raw_similarity": c["raw_similarity"],
             "strength": c["strength"],
