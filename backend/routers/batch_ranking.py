@@ -1,6 +1,7 @@
 import logging
 from typing import List
-from fastapi import APIRouter, UploadFile, File, Form
+from fastapi import APIRouter, UploadFile, File, Form, Request
+from backend.limiter import limiter
 from backend.services.pdf_parser import extract_text_from_pdf
 from backend.services.batch_ranker import rank_candidates
 
@@ -10,7 +11,9 @@ router = APIRouter(prefix="/api/batch-ranking", tags=["Batch Candidate Ranking"]
 MAX_RESUMES = 10
 
 @router.post("")
+@limiter.limit("3/minute")
 async def batch_rank_candidates(
+    request: Request,
     files: List[UploadFile] = File(...),
     job_description: str = Form(...)
 ):

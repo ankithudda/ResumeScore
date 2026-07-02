@@ -1,6 +1,7 @@
 import json
 import logging
-from fastapi import APIRouter, Depends, Form
+from fastapi import APIRouter, Depends, Form, Request
+from backend.limiter import limiter
 from backend.dependencies import valid_pdf_text
 from backend.services.job_matcher import match_multiple_jobs
 
@@ -8,7 +9,9 @@ logger = logging.getLogger("ResumeScore.JobMatcherRouter")
 router = APIRouter(prefix="/api/job-matcher", tags=["Job Matching"])
 
 @router.post("")
+@limiter.limit("5/minute")
 async def find_best_fit_job(
+    request: Request,
     jobs_json: str = Form(...),
     resume_text: str = Depends(valid_pdf_text)
 ):

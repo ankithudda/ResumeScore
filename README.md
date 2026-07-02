@@ -31,19 +31,19 @@ ResumeScore implements a strict **3-layer design** and a **Retriever-Reader casc
 ┌────────────────────────▼────────────────────────────────────┐
 │  FastAPI Backend (backend/)                                 │
 │                                                             │
-│  Layer 1 — Routers (6 files)                               │
+│  Layer 1 — Routers (6 files)                                │
 │  · Thin HTTP handlers: validate input, return responses     │
 │  · Shared PDF dependency via FastAPI Depends()              │
-│  · Global exception handlers: ValueError→422, Runtime→502  │
+│  · Global exception handlers: ValueError→422, Runtime→502   │
 │                                                             │
-│  Layer 2 — Services (domain logic per feature)             │
+│  Layer 2 — Services (domain logic per feature)              │
 │  · Pydantic v2 schemas as strict data contracts             │
 │  · Nested model validation for complex AI outputs           │
 │                                                             │
-│  Layer 3 — Shared Infrastructure                           │
-│  · ai_client.py: NVIDIA API calls + JSON fence-stripping   │
+│  Layer 3 — Shared Infrastructure                            │
+│  · ai_client.py: NVIDIA API calls + JSON fence-stripping    │
 │  · scorer.py: TF-IDF vectorization + cosine similarity      │
-│  · pdf_parser.py: pdfplumber text extraction               │
+│  · pdf_parser.py: pdfplumber text extraction                │
 └─────────────────────────────────────────────────────────────┘
                          │
 ┌────────────────────────▼────────────────────────────────────┐
@@ -188,10 +188,10 @@ All variables are documented in `.env.example`. Never commit `.env` to version c
 
 - [ ] Deploy backend to Railway / Render
 - [ ] Deploy frontend to Streamlit Cloud
-- [ ] Add rate limiting via `slowapi`
+- [x] Add rate limiting via `slowapi`
 - [ ] Add resume scoring history (SQLite)
 - [ ] Add API key authentication for multi-user deployment
-- [ ] Duplicate filename handling in batch ranking
+- [x] Duplicate filename handling in batch ranking
 - [ ] *...and more ideas currently in the pipeline!*
 
 ---

@@ -1,4 +1,5 @@
-from fastapi import APIRouter, Depends, Form
+from fastapi import APIRouter, Depends, Form, Request
+from backend.limiter import limiter
 from backend.dependencies import valid_pdf_text
 from backend.services.scorer import calculate_match_score
 from backend.services.ai_analyzer import analyze_resume_with_ai
@@ -6,7 +7,9 @@ from backend.services.ai_analyzer import analyze_resume_with_ai
 router = APIRouter(prefix="/api/analysis", tags=["Analysis"])
 
 @router.post("/full")
+@limiter.limit("5/minute")
 async def full_analysis(
+    request: Request,
     job_description: str = Form(...),
     resume_text: str = Depends(valid_pdf_text)
 ):
