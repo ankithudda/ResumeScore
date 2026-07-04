@@ -7,6 +7,7 @@ from pydantic import BaseModel, ValidationError
 
 logger = logging.getLogger("ResumeScore.AIClient")
 NVIDIA_API_URL = "https://integrate.api.nvidia.com/v1/chat/completions"
+GROQ_API_URL = "https://api.groq.com/openai/v1/chat/completions"
 
 T = TypeVar("T", bound=BaseModel)
 
@@ -73,6 +74,69 @@ async def call_nvidia_llm(prompt: str, temperature: float = 0.6, max_tokens: int
         logger.error(f"Unexpected error in call_nvidia_llm: {str(e)}")
         raise RuntimeError(f"An unexpected AI connection error occurred: {str(e)}") from e
 
+async def call_groq_llm(prompt: str, temperature: float = 0.6, max_tokens: int = 1200) -> dict:
+    """Executes the raw HTTP request to the Groq API (Qwen 3.6 27B) and extracts clean text."""
+    api_key = os.getenv("GROQ_API_KEY")
+
+    if not api_key:
+        logger.error("GROQ_API_KEY environment variable is missing.")
+        return {"error": "Missing Groq API Key."}
+
+    headers = {
+        "Authorization": f"Bearer {api_key}",
+        "Content-Type": "application/json"
+    }
+
+    payload = {
+        "model": "qwen/qwen3.6-27b",
+        "messages": [{"role": "user", "content": prompt}],
+        "temperature": temperature,
+        "max_completion_tokens": max_tokens,
+        "reasoning_effort": "none"
+    }
+
+    content = ""
+    try:
+        async with httpx.AsyncClient(timeout=120.0) as client:
+            response = await client.post(GROQ_API_URL, headers=headers, json=payload)
+
+            if response.status_code != 200:
+                logger.error(f"Groq API Error {response.status_code}: {response.text}")
+                return {"error": f"Groq rejected the request (Code {response.status_code})."}
+
+            data = response.json()
+            content = data["choices"][0]["message"]["content"]
+
+            if not content:
+                logger.error(f"Groq API returned an empty response. Full data: {data}")
+                return {"error": "The Groq model returned an empty response."}
+
+            clean_text = content.strip()
+
+            if "```json" in clean_text:
+                clean_text = clean_text.split("```json")[1].split("```")[0]
+            elif "```" in clean_text:
+                clean_text = clean_text.split("```")[1].split("```")[0]
+
+            clean_text = clean_text.replace("{{", "{").replace("}}", "}")
+
+            start_idx = clean_text.find('{')
+            end_idx = clean_text.rfind('}')
+
+            if start_idx != -1 and end_idx != -1:
+                clean_text = clean_text[start_idx:end_idx+1]
+
+            return json.loads(clean_text, strict=False)
+
+    except httpx.ReadTimeout:
+        logger.error("Groq API timed out.")
+        return {"error": "Groq API took too long to respond. Please try again."}
+    except json.JSONDecodeError as e:
+        logger.error(f"Failed to parse Groq JSON: {str(e)}\nRaw Output: {content}")
+        return {"error": "The AI returned an invalid response format. Please try again."}
+    except Exception as e:
+        logger.error(f"Unexpected error in call_groq_llm: {str(e)}")
+        raise RuntimeError(f"An unexpected Groq connection error occurred: {str(e)}") from e
 
 async def call_and_validate(
     prompt: str, 
@@ -82,13 +146,17 @@ async def call_and_validate(
 ) -> Dict[str, Any]:
     """
     Centralized utility to execute LLM calls and validate the output against a Pydantic schema.
-    Eliminates redundant try/except boilerplate across all domain services.
+    Tries Groq first (fast path); falls back to NVIDIA only if Groq fails.
     """
-    raw_response = await call_nvidia_llm(prompt, temperature=temperature, max_tokens=max_tokens)
-    
+    raw_response = await call_groq_llm(prompt, temperature=temperature, max_tokens=max_tokens)
+
+    if not raw_response or "error" in raw_response:
+        logger.warning(f"Primary provider (Groq) failed: {raw_response.get('error') if isinstance(raw_response, dict) else 'Empty response'}. Falling back to NVIDIA.")
+        raw_response = await call_nvidia_llm(prompt, temperature=temperature, max_tokens=max_tokens)
+
     if not raw_response or "error" in raw_response:
         error_msg = raw_response.get("error", "Unknown AI Service Error") if isinstance(raw_response, dict) else "Empty response"
-        logger.error(f"LLM Processing Exception: {error_msg}")
+        logger.error(f"Both providers failed. Last error: {error_msg}")
         raise RuntimeError(f"AI Service Failure: {error_msg}")
         
     try:
