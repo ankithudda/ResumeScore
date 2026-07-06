@@ -51,4 +51,4 @@ RESUME:
 
 Start your response directly with the opening curly brace '{{'
 """
-    return await call_and_validate(prompt, schema=InterviewPrepResponse, temperature=0.6, max_tokens=1200)
+    return await call_and_validate(prompt, schema=InterviewPrepResponse, temperature=0.6, max_tokens=1800)
