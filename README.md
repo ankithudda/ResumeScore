@@ -5,6 +5,14 @@
 
 ---
 
+## 🌐 Live Demo
+
+- **App:** [resumescore-ankit.streamlit.app](https://resumescore-ankit.streamlit.app)
+
+> Backend runs on Render's free tier — the first request after a period of inactivity may take 30-50 seconds to wake up. Subsequent requests are fast.
+
+---
+
 ## 🚀 Features
 
 | Feature | Endpoint | Description |
@@ -111,12 +119,15 @@ ResumeScore/
 │       └── batch_ranker.py            # Batch candidate ranking domain service
 │
 └── frontend/
+    ├── requirements.txt      # Frontend only
     └── app.py                # Streamlit multi-tab UI
 ```
 
 ---
 
 ## ⚙️ Setup & Run
+
+> Want to try it without any setup? See the **Live Demo** above.
 
 ### 1. Clone and install dependencies
 ```bash
@@ -195,8 +206,8 @@ All variables are documented in `.env.example`. Never commit `.env` to version c
 
 ## 🔜 Planned Improvements
 
-- [ ] Deploy backend to Railway / Render
-- [ ] Deploy frontend to Streamlit Cloud
+- [x] Deploy backend to Render
+- [x] Deploy frontend to Streamlit Cloud
 - [x] Add rate limiting via `slowapi`
 - [x] Add secondary AI provider (Groq/Qwen 3.6 27B) for failover + speed
 - [ ] Add resume scoring history (SQLite)
@@ -214,4 +225,4 @@ All variables are documented in `.env.example`. Never commit `.env` to version c
 
 ---
 
-*Built by [Ankit Hudda] | B.Tech CSE*
+*Built by [Ankit Hudda] | B.Tech CSE (AI & Data Science)*
